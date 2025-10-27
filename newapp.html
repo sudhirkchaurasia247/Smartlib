@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMARTLIB+ App</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/lucide-static@latest/lib/lucide.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    
+    <style>
+        /* Base font */
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease-in-out;
+        }
+        
+        /* Styles from login.html */
+        .gradient-bg {
+            background: linear-gradient(120deg, #3d1944, #2f3766);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .shape {
+            position: absolute;
+            background-color: rgba(158, 124, 148, 0.1);
+            border-radius: 50%;
+            animation: float 20s infinite linear;
+            z-index: 1; /* Ensure shapes are behind login modal */
+        }
+
+        .shape-1 { top: 10%; left: 10%; width: 100px; height: 100px; animation-duration: 15s; }
+        .shape-2 { top: 70%; left: 60%; width: 60px; height: 60px; animation-duration: 20s; }
+        .shape-3 { bottom: 10%; left: 30%; width: 80px; height: 80px; animation-duration: 12s; }
+        .shape-4 { bottom: 20%; right: 10%; width: 120px; height: 120px; animation-duration: 18s; }
+
+        @keyframes float {
+            0% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-30px) rotate(180deg); }
+            100% { transform: translateY(0) rotate(360deg); }
+        }
+        
+        /* Custom scrollbar for dark theme (for dashboard) */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937; /* gray-800 */
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563; /* gray-600 */
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280; /* gray-500 */
+        }
+        
+        /* Styles from dashboard.html */
+        .chart-bar { transition: height 600ms cubic-bezier(.2,.8,.2,1); }
+        .tab-btn.active { border-bottom: 2px solid #00BCD4; color: #00BCD4; }
+        [role="button"] { outline: none; }
+        .seat-available { background: linear-gradient(180deg,#10b981,#059669); }
+        .seat-booked { background: linear-gradient(180deg,#ef4444,#b91c1c); }
+    </style>
+</head>
+<body class="gradient-bg antialiased">
+
+    <div id="login-page" class="min-h-screen flex items-center justify-center p-4">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+        <div class="shape shape-4"></div>
+
+        <div class="w-full max-w-5xl bg-white shadow-2xl rounded-2xl flex overflow-hidden z-10">
+            
+            <div class="hidden lg:flex lg:w-1/2 p-12 text-white relative flex-col justify-center gradient-bg">
+                <div class="z-10">
+                    <div class="mb-8">
+                        <img src="smartlogo.png" 
+                             alt="SmartLib+ Logo" 
+                             class="h-12"
+                             onerror="this.onerror=null; this.src='https://placehold.co/200x50/FFFFFF/3B82F6?text=SMARTLIB+&font=inter';">
+                    </div>
+                    <h1 class="text-5xl font-bold mb-4">Hello, welcome!</h1>
+                    <p class="text-lg opacity-80">
+                        Smart lib+ : Intelligent library and facility 
+                        management platform
+                    </p>
+                </div>
+            </div>
+            
+            <div class="w-full lg:w-1/2 p-8 md:p-12 bg-white">
+                <form id="login-form">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-6">Login</h2>
+
+                    <div class="mb-4">
+                        <label for="email" class="block text-sm font-medium text-gray-600 mb-2">Email address</label>
+                        <input type="email" id="email" name="email" placeholder="name@mail.com" required
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="password" class="block text-sm font-medium text-gray-600 mb-2">Password</label>
+                        <input type="password" id="password" name="password" placeholder="••••••••" required
+                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <div class="flex items-center justify-between mb-6 text-sm">
+                        <label class="flex items-center">
+                            <input type="checkbox" class="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                            <span class="ml-2 text-gray-600">Remember me</span>
+                        </label>
+                        <a href="#" class="font-medium text-blue-600 hover:text-blue-500">Forgot password?</a>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-4">
+                        <button type="submit" id="login-button"
+                                class="w-full px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition-colors">
+                            Login
+                        </button>
+                        <button type="button" id="signup-button"
+                                class="w-full px-6 py-3 bg-white text-blue-600 font-semibold border border-blue-600 rounded-lg shadow-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75 transition-colors">
+                            Sign up
+                        </button>
+                    </div>
+
+                    <div class="text-center mt-8">
+                        <p class="text-gray-500 text-sm">FOLLOW</p>
+                        <div class="flex justify-center space-x-4 mt-2">
+                            <a href="#" class="text-gray-400 hover:text-blue-600">
+                                <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clip-rule="evenodd" /></svg>
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="dashboard-page" class="hidden p-4 sm:p-8">
+    
+        <div class="max-w-7xl mx-auto">
+
+        <header class="flex flex-wrap items-center justify-between gap-4 pb-6 border-b border-gray-700">
+          <div class="flex items-center gap-3">
+              <img src="smartlogo.png" alt="SmartLib+ Logo" class="h-12 mr-3" onerror="this.style.display='none'"> 
+            <div>
+              <h1 class="text-2xl sm:text-3xl font-extrabold"><span class="text-teal-400">SMART</span>LIB+</h1>
+              <p class="text-xs text-gray-400">Smart Library & Facility Management — Hackathon MVP</p>
+            </div>
+          </div>
+    
+          <div class="flex items-center gap-3">
+            <div class="text-sm text-gray-300">
+              <div id="user-display">Guest</div>
+              <div id="user-id" class="text-xs text-gray-500">No ID</div>
+            </div>
+            <button id="sign-in-btn" class="bg-transparent border border-teal-500 text-teal-400 px-3 py-2 rounded-lg text-sm hover:bg-teal-600/10">Sign In (Demo User)</button>
+            <button id="export-btn" title="Export report" class="bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-3 rounded-lg">Export</button>
+          </div>
+        </header>
+    
+        <nav class="flex gap-6 mt-6 mb-8 border-b border-gray-800 overflow-x-auto">
+          <button class="tab-btn active pb-3 text-lg font-medium transition whitespace-nowrap" data-section="dashboard">Dashboard</button>
+          <button class="tab-btn pb-3 text-lg font-medium transition whitespace-nowrap" data-section="catalog">Catalog</button>
+          <button class="tab-btn pb-3 text-lg font-medium transition whitespace-nowrap" data-section="seating">Seating</button>
+          <button class="tab-btn pb-3 text-lg font-medium transition whitespace-nowrap" data-section="analytics">Analytics</button>
+          <button class="tab-btn pb-3 text-lg font-medium transition whitespace-nowrap" data-section="admin">Admin</button>
+        </nav>
+    
+        <main class="space-y-10">
+    
+          <section id="dashboard" class="content-section">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+              <h2 class="text-2xl font-bold text-white">My Personalized Dashboard</h2>
+              <div class="flex items-center gap-2">
+                <input id="global-search" aria-label="Search catalog" placeholder="Search books, authors, tags..." class="px-3 py-2 rounded-lg bg-gray-800 border border-gray-700 text-gray-200 focus:ring-2 focus:ring-teal-500" />
+                <button id="clear-storage" class="text-xs text-gray-400 hover:text-white whitespace-nowrap">Reset Demo</button>
+              </div>
+            </div>
+    
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+              <div class="bg-gray-800 p-6 rounded-xl shadow border-t-4 border-teal-500">
+                <p class="text-gray-400 text-sm">Currently Borrowed</p>
+                <p id="borrowed-count" class="text-4xl font-extrabold text-white mt-1">0</p>
+                <p class="text-xs text-gray-400 mt-2" id="next-due">Next due: —</p>
+              </div>
+    
+              <div class="bg-gray-800 p-6 rounded-xl shadow border-t-4 border-red-500">
+                <p class="text-gray-400 text-sm">Overdue Fines</p>
+                <p id="total-fines" class="text-4xl font-extrabold text-red-400 mt-1">$0.00</p>
+                <button id="pay-fines-btn" class="mt-3 text-sm bg-red-600 hover:bg-red-700 rounded-md px-3 py-1">Pay Now (Mock)</button>
+              </div>
+    
+              <div class="bg-gray-800 p-6 rounded-xl shadow border-t-4 border-purple-500">
+                <p class="text-gray-400 text-sm">Reading Progress (E-books)</p>
+                <p id="ebook-progress" class="text-4xl font-extrabold text-white mt-1">0%</p>
+                <div class="w-full bg-gray-700 rounded-full h-2.5 mt-3 overflow-hidden">
+                  <div id="ebook-progress-bar" class="h-2.5 rounded-full" style="width:0%; background:linear-gradient(90deg,#7c3aed,#06b6d4)"></div>
+                </div>
+              </div>
+            </div>
+    
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+              <div class="lg:col-span-2 bg-gray-800 p-6 rounded-xl shadow-xl">
+                <h3 class="text-xl text-teal-300 font-semibold mb-4">Current Loans & History</h3>
+                <div id="borrowing-history" class="space-y-3 max-h-72 overflow-auto"></div>
+              </div>
+    
+              <aside class="bg-gray-800 p-6 rounded-xl shadow-xl">
+                <h3 class="text-xl text-purple-300 font-semibold mb-4">Wishlist & Notifications</h3>
+                <div id="notifications" class="space-y-2 max-h-72 overflow-auto"></div>
+              </aside>
+            </div>
+          </section>
+    
+          <section id="catalog" class="content-section hidden">
+            <div class="flex flex-wrap items-center justify-between gap-6 mb-6">
+              <h2 class="text-2xl font-bold">Resource Catalog & Management</h2>
+              <div class="flex gap-3">
+                <button id="mock-scan" class="bg-teal-600 hover:bg-teal-700 px-4 py-2 rounded-lg whitespace-nowrap">Simulate Scan (QR/RFID)</button>
+                <button id="add-resource" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg whitespace-nowrap">Add Resource</button>
+              </div>
+            </div>
+    
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div class="bg-gray-800 p-6 rounded-xl shadow-xl lg:col-span-2">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                  <div class="flex items-center gap-3">
+                    <input id="catalog-filter" placeholder="Filter by type, tag, or availability..." class="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700"/>
+                    <select id="sort-select" class="px-3 py-2 rounded-lg bg-gray-900 border border-gray-700">
+                      <option value="popular">Sort: Popularity</option>
+                      <option value="title">Sort: Title</option>
+                      <option value="new">Sort: Newest</option>
+                    </select>
+                  </div>
+                  <div class="text-sm text-gray-400">Total: <span id="catalog-count">0</span></div>
+                </div>
+    
+                <div class="overflow-auto max-h-[52vh]">
+                  <table class="min-w-full divide-y divide-gray-700">
+                    <thead class="bg-gray-900 sticky top-0">
+                      <tr>
+                        <th class="px-4 py-3 text-left text-xs text-gray-400">Title (Type)</th>
+                        <th class="px-4 py-3 text-left text-xs text-gray-400">Status</th>
+                        <th class="px-4 py-3 text-left text-xs text-gray-400">Tags</th>
+                        <th class="px-4 py-3 text-left text-xs text-gray-400">Recomm.</th>
+                        <th class="px-4 py-3 text-left text-xs text-gray-400">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody id="book-catalog-body" class="divide-y divide-gray-800"></tbody>
+                  </table>
+                </div>
+              </div>
+    
+              <div class="bg-gray-800 p-6 rounded-xl shadow-xl">
+                <h3 class="text-lg text-teal-300 mb-3">Recommendation Engine</h3>
+                <p class="text-sm text-gray-400 mb-3">Personalized picks based on your borrowing & preferences.</p>
+                <div id="recommendations" class="space-y-2"></div>
+                <hr class="my-4 border-gray-700" />
+                <h3 class="text-lg text-purple-300 mb-2">Add Metadata</h3>
+                <div>
+                  <input id="meta-title" placeholder="Title" class="w-full p-2 rounded-lg bg-gray-900 border border-gray-700 mb-2"/>
+                  <input id="meta-tags" placeholder="Tags (comma separated)" class="w-full p-2 rounded-lg bg-gray-900 border border-gray-700 mb-2"/>
+                  <select id="meta-type" class="w-full p-2 rounded-lg bg-gray-900 border border-gray-700 mb-2">
+                    <option>Book</option><option>E-Book</option><option>Journal</option><option>Audiobook</option><option>Research Paper</option>
+                  </select>
+                  <button id="meta-add-btn" class="w-full bg-teal-600 hover:bg-teal-700 py-2 rounded-lg">Add Resource</button>
+                </div>
+              </div>
+            </div>
+          </section>
+    
+          <section id="seating" class="content-section hidden">
+            <h2 class="text-2xl font-bold">Advanced Seat & Facility Booking</h2>
+    
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+              <div class="bg-gray-800 p-6 rounded-xl shadow-xl">
+                <p class="text-gray-400 text-sm">Total Seats / Occupied</p>
+                <p id="occupancy-stats" class="text-3xl font-extrabold text-white mt-1">0 / 0</p>
+                <p id="occupancy-pct" class="text-sm text-green-400">— available</p>
+    
+                <hr class="my-4 border-gray-700" />
+                <h3 class="text-lg font-semibold text-purple-300 mb-2">Room Booking</h3>
+                <select id="room-select" class="w-full p-2 bg-gray-900 border border-gray-700 rounded-lg mb-2"></select>
+                <input id="room-date" type="date" class="w-full p-2 bg-gray-900 border border-gray-700 rounded-lg mb-2" />
+                <select id="room-slot" class="w-full p-2 bg-gray-900 border border-gray-700 rounded-lg mb-2">
+                  <option value="09:00-11:00">09:00 - 11:00</option>
+                  <option value="11:00-13:00">11:00 - 13:00</option>
+                  <option value="14:00-16:00">14:00 - 16:00</option>
+                  <option value="16:00-18:00">16:00 - 18:00</option>
+                </select>
+                <button id="reserve-room-btn" class="w-full bg-purple-600 hover:bg-purple-700 py-2 rounded-lg">Reserve Room</button>
+              </div>
+    
+              <div class="lg:col-span-2 bg-gray-800 p-6 rounded-xl shadow-xl">
+                <h3 class="text-teal-300 text-lg mb-3">Interactive Floor Map (Zone A)</h3>
+                <p class="text-sm text-gray-400 mb-4">Click an available seat to reserve. Green = Available, Red = Booked.</p>
+                <div id="seat-map" class="grid grid-cols-8 gap-3 p-3 rounded-lg bg-gray-900 overflow-auto"></div>
+                <div class="mt-4 text-xs text-gray-400">
+                  <span class="inline-flex items-center gap-2"><span class="w-4 h-4 rounded-sm block seat-available"></span> Available</span>
+                  <span class="inline-flex items-center gap-2 ml-4"><span class="w-4 h-4 rounded-sm block seat-booked"></span> Booked</span>
+                </div>
+              </div>
+            </div>
+          </section>
+    
+          <section id="analytics" class="content-section hidden">
+            <h2 class="text-2xl font-bold">Library Analytics & Predictive Reporting</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+              <div class="bg-gray-800 p-6 rounded-xl shadow-xl">
+                <h3 class="text-teal-300 font-semibold mb-4">Book Popularity (Total Borrows)</h3>
+                <canvas id="popularity-chart" class="w-full h-64"></canvas>
+              </div>
+    
+              <div class="bg-gray-800 p-6 rounded-xl shadow-xl">
+                <h3 class="text-purple-300 font-semibold mb-4">Predictive Demand Forecast</h3>
+                <div id="forecast-list" class="space-y-3"></div>
+                <button id="recalc-forecast" class="mt-4 bg-yellow-500 hover:bg-yellow-600 text-black px-3 py-2 rounded-md">Recalculate Forecast</button>
+              </div>
+            </div>
+          </section>
+    
+          <section id="admin" class="content-section hidden">
+            <h2 class="text-2xl font-bold">Admin Console (Demo)</h2>
+            <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="bg-gray-800 p-6 rounded-xl shadow-xl">
+                <h3 class="text-teal-300 mb-3">Bulk Upload (JSON)</h3>
+                <textarea id="bulk-json" rows="8" class="w-full p-3 bg-gray-900 border border-gray-700 rounded-lg font-mono text-xs"></textarea>
+                <div class="flex gap-2 mt-3">
+                  <button id="bulk-load" class="bg-teal-600 hover:bg-teal-700 px-3 py-2 rounded-md">Load JSON</button>
+                  <button id="download-sample" class="bg-gray-700 hover:bg-gray-600 px-3 py-2 rounded-md">Sample JSON</button>
+                </div>
+              </div>
+    
+              <div class="bg-gray-800 p-6 rounded-xl shadow-xl">
+                <h3 class="text-purple-300 mb-3">System Actions</h3>
+                <div class="space-y-2">
+                  <button id="simulate-day" class="w-full bg-indigo-600 hover:bg-indigo-700 px-3 py-2 rounded-md">Simulate Day (advance time & update stats)</button>
+                  <button id="clear-cache" class="w-full bg-red-600 hover:bg-red-700 px-3 py-2 rounded-md">Clear Storage</button>
+                </div>
+              </div>
+            </div>
+          </section>
+    
+        </main>
+      </div>
+    
+      <div id="modal-root"></div>
+    
+      <script>
+      /*****************************************************************************
+       * SmartLib+ — Advanced MVP JS
+       * - Uses localStorage for persistence
+       * - Implements: catalog, scan mock, issue/return, recommendations,
+       * multi-format resources, seat & room booking, analytics, export, notifications
+       *
+       * NOTE: This is a single-file demo. Swap localStorage with server APIs for production.
+       *****************************************************************************/
+    
+      // ---------- Utilities ----------
+      const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+    
+      // Local persistence wrapper
+      const DB = {
+        read(key, fallback) {
+          try {
+            const v = localStorage.getItem(key);
+            return v ? JSON.parse(v) : fallback;
+          } catch (e) { console.error('DB.read', e); return fallback; }
+        },
+        write(key, value) {
+          try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { console.error('DB.write', e); }
+        }
+      };
+    
+      // ---------- Seed Data ----------
+      const seed = {
+        users: [
+          { id: 'u1001', name: 'John Doe', email: 'john@example.edu', prefs: { genres: ['Data Science','AI'] }, fines: 4.5 }
+        ],
+        catalog: [
+          { id: '101', title: 'The Art of Innovation', authors: ['Tom Kelley'], type: 'Book', tags: ['Innovation','Design'], status: 'Issued', borrower: 'u1001', borrowedAt: Date.now()- (1000*60*60*24*10), popularity: 120 },
+          { id: '102', title: 'Quantum Computing Basics', authors: ['A. Researcher'], type: 'E-Book', tags: ['Quantum','CS'], status: 'Issued', borrower: 'u1001', borrowedAt: Date.now()- (1000*60*60*24*2), popularity: 85 },
+          { id: '103', title: 'Data Structures in Java', authors: ['S. Author'], type: 'Book', tags: ['CS','Data Structures'], status: 'Available', popularity: 200 },
+          { id: '104', title: 'Global Finance Journal (May)', authors: ['Editorial Team'], type: 'Journal', tags: ['Finance'], status: 'Available', popularity: 45 },
+          { id: '105', title: 'AI Ethics & Society', authors: ['D. Scholar'], type: 'Book', tags: ['AI','Ethics'], status: 'Available', popularity: 150 },
+        ],
+        seats: Array.from({length: 64}, (_,i) => ({ id: i+1, booked: i < 46 ? true : false, user: i < 46 ? 'u1001' : null })),
+        rooms: [
+          { id: 'R1', name: 'Private Room 1', capacity: 4, bookings: [] },
+          { id: 'R2', name: 'Group Discussion Area', capacity: 12, bookings: [] },
+          { id: 'R3', name: 'Seminar Room 3', capacity: 30, bookings: [] }
+        ],
+        notifications: [
+          { id: uid(), user: 'u1001', text: 'Applied AI in Healthcare is now available', time: Date.now()-1000*60*60 },
+          { id: uid(), user: 'u1001', text: 'Your reserved book will be available tomorrow', time: Date.now()-1000*60*60*12 }
+        ]
+      };
+    
+      // Initialize DB if empty
+      if (!localStorage.getItem('smartlib_state')) {
+        DB.write('smartlib_state', seed);
+      }
+    
+      // Read app state
+      let state = DB.read('smartlib_state', seed);
+    
+      // Currently signed in user (mock)
+      let currentUser = state.users[0]; // default to first user for demo
+    
+      // ---------- UI Helpers ----------
+      const el = id => document.getElementById(id);
+      const showSection = (sectionId) => {
+        document.querySelectorAll('.content-section').forEach(sec => sec.classList.add('hidden'));
+        if(el(sectionId)) el(sectionId).classList.remove('hidden');
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active','text-teal-400'));
+        const activeBtn = document.querySelector(`.tab-btn[data-section="${sectionId}"]`);
+        if(activeBtn) activeBtn.classList.add('active','text-teal-400');
+    
+        // re-render
+        if (sectionId === 'dashboard' && typeof renderDashboard === 'function') renderDashboard();
+        if (sectionId === 'catalog' && typeof renderBookCatalog === 'function') renderBookCatalog();
+        if (sectionId === 'seating' && typeof renderSeatMap === 'function') renderSeatMap();
+        if (sectionId === 'analytics' && typeof renderAnalytics === 'function') renderAnalytics();
+        if (sectionId === 'admin' && typeof renderAdmin === 'function') renderAdmin();
+      };
+    
+      // Setup tab buttons
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => showSection(btn.dataset.section));
+      });
+    
+      // ---------- Dashboard ----------
+      function renderDashboard() {
+        el('user-display').textContent = currentUser.name;
+        el('user-id').textContent = currentUser.id;
+    
+        // Borrowed count & list
+        const borrowed = state.catalog.filter(b => b.status === 'Issued' && b.borrower === currentUser.id);
+        el('borrowed-count').textContent = borrowed.length;
+        const nextDue = borrowed.length ? new Date(Math.min(...borrowed.map(b => b.borrowedAt + (7*24*60*60*1000)))).toLocaleDateString() : '—';
+        el('next-due').textContent = `Next due: ${nextDue}`;
+    
+        // fines
+        el('total-fines').textContent = `$${(currentUser.fines || 0).toFixed(2)}`;
+    
+        // e-book progress (mock)
+        const eb = state.catalog.filter(b => b.type === 'E-Book' && b.borrower === currentUser.id).length;
+        const progress = Math.min(100, eb * 25);
+        el('ebook-progress').textContent = progress+'%';
+        el('ebook-progress-bar').style.width = progress + '%';
+    
+        // borrowing history
+        const histRoot = el('borrowing-history');
+        histRoot.innerHTML = '';
+        const allLoans = state.catalog.filter(b => b.borrower === currentUser.id).sort((a,b)=> (b.borrowedAt||0)-(a.borrowedAt||0));
+        if (!allLoans.length) histRoot.innerHTML = '<p class="text-gray-400">No active loans.</p>';
+        allLoans.forEach(book => {
+          const dueMs = (book.borrowedAt || Date.now()) + 7*24*60*60*1000;
+          const due = new Date(dueMs);
+          const overdue = Date.now() > dueMs;
+          const node = document.createElement('div');
+          node.className = 'flex justify-between items-center p-3 bg-gray-700 rounded-lg';
+          node.innerHTML = `
+            <div>
+              <div class="font-medium">${book.title} <span class="text-xs text-gray-400">(${book.type})</span></div>
+              <div class="text-xs text-gray-400">Due: <span class="${overdue ? 'text-red-400 font-bold' : 'text-gray-300'}">${due.toLocaleString()}</span></div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="bg-teal-600 hover:bg-teal-700 px-2 py-1 rounded text-sm" onclick="mockReturn('${book.id}')">Return</button>
+              <button class="bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded text-sm" onclick="extendLoan('${book.id}')">Extend</button>
+            </div>
+          `;
+          histRoot.appendChild(node);
+        });
+    
+        // notifications
+        renderNotifications();
+      }
+    
+      // ---------- Notifications ----------
+      function renderNotifications() {
+        const root = el('notifications');
+        root.innerHTML = '';
+        const notes = state.notifications.filter(n => n.user === currentUser.id).sort((a,b)=>b.time-a.time);
+         if (!notes.length) root.innerHTML = '<p class="text-gray-400 text-sm">No new notifications.</p>';
+        notes.forEach(n => {
+          const node = document.createElement('div');
+          node.className = 'bg-gray-700 p-3 rounded-lg flex justify-between items-center';
+          node.innerHTML = `<div><div class="text-sm">${n.text}</div><div class="text-xs text-gray-400">${new Date(n.time).toLocaleString()}</div></div>
+                            <div><button class="text-xs text-teal-400" onclick="dismissNote('${n.id}')">Dismiss</button></div>`;
+          root.appendChild(node);
+        });
+      }
+      function dismissNote(id) {
+        state.notifications = state.notifications.filter(n=>n.id!==id);
+        DB.write('smartlib_state', state);
+        renderNotifications();
+      }
+    
+      // ---------- Catalog ----------
+      function renderBookCatalog() {
+        const body = el('book-catalog-body');
+        const filter = el('catalog-filter').value.toLowerCase();
+        const sort = el('sort-select').value;
+        let list = [...state.catalog];
+    
+        // filter
+        if (filter) {
+          list = list.filter(b => (b.title||'').toLowerCase().includes(filter) || (b.tags||[]).join(' ').toLowerCase().includes(filter) || (b.type||'').toLowerCase().includes(filter));
+        }
+        // sort
+        if (sort === 'popular') list.sort((a,b)=> (b.popularity||0)-(a.popularity||0));
+        if (sort === 'title') list.sort((a,b)=> (a.title||'').localeCompare(b.title||''));
+        if (sort === 'new') list.sort((a,b)=> (b.id||'').localeCompare(a.id||''));
+    
+        body.innerHTML = '';
+        list.forEach(book => {
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-gray-700';
+          const tagsHtml = (book.tags || []).map(t=>`<span class="text-xs text-gray-300 bg-gray-800 px-2 py-0.5 rounded">${t}</span>`).join(' ');
+          const recommended = isRecommendedToUser(book) ? '<span class="text-xs font-semibold text-purple-400 bg-purple-900/50 px-2 py-0.5 rounded-full">Recommended</span>' : '—';
+          const isAvailable = book.status === 'Available';
+          const action = isAvailable ? `<button class="bg-teal-600 hover:bg-teal-700 px-2 py-1 rounded text-sm" onclick="issueBook('${book.id}')">Issue</button>` : `<span class="text-xs text-gray-400">Unavailable</span>`;
+    
+          tr.innerHTML = `
+            <td class="px-4 py-3 text-sm">
+              <div class="font-medium">${book.title}</div>
+              <div class="text-xs text-gray-400">${(book.authors||[]).join(', ')}</div>
+            </td>
+            <td class="px-4 py-3 text-sm">${book.status === 'Available' ? '<span class="text-green-400">Available</span>' : '<span class="text-yellow-400">Issued</span>'}</td>
+            <td class="px-4 py-3 text-sm">${tagsHtml}</td>
+            <td class="px-4 py-3 text-sm">${recommended}</td>
+            <td class="px-4 py-3 text-sm">${action} <button class="ml-2 bg-gray-700 px-2 py-1 rounded text-sm" onclick="viewDetails('${book.id}')">Details</button></td>
+          `;
+          body.appendChild(tr);
+        });
+    
+        el('catalog-count').textContent = list.length;
+        // recommendations panel
+        renderRecommendations();
+      }
+    
+      // Add metadata (from right-side panel)
+      el('meta-add-btn').addEventListener('click', () => {
+        const title = el('meta-title').value.trim();
+        if (!title) return alert('Title required');
+        const tags = el('meta-tags').value.split(',').map(s=>s.trim()).filter(Boolean);
+        const type = el('meta-type').value;
+        const book = { id: uid(), title, authors: [], type, tags, status: 'Available', popularity: 0 };
+        state.catalog.push(book);
+        DB.write('smartlib_state', state);
+        el('meta-title').value = el('meta-tags').value = '';
+        renderBookCatalog();
+        notifyUser(currentUser.id, `New resource "${title}" added to catalog.`);
+      });
+    
+      // Mock scan (adds a random research paper)
+      el('mock-scan').addEventListener('click', () => {
+        const newBook = { id: uid(), title: 'Scanned Research — ' + new Date().toLocaleString(), authors: ['Automated Scanner'], type: 'Research Paper', tags: ['Scanned','Research'], status: 'Available', popularity: 5 };
+        state.catalog.unshift(newBook);
+        DB.write('smartlib_state', state);
+        el('mock-scan').textContent = 'Scan Successful! Added';
+        setTimeout(()=> el('mock-scan').textContent = 'Simulate Scan (QR/RFID)', 1800);
+        renderBookCatalog();
+      });
+    
+      // Issue book
+      function issueBook(bookId) {
+        const book = state.catalog.find(b=>b.id===bookId);
+        if (!book) return alert('Book not found');
+        if (book.status !== 'Available') return alert('Book not available');
+        book.status = 'Issued';
+        book.borrower = currentUser.id;
+        book.borrowedAt = Date.now();
+        book.popularity = (book.popularity || 0) + 1;
+        DB.write('smartlib_state', state);
+        renderBookCatalog();
+        renderDashboard();
+        notifyUser(currentUser.id, `You have issued "${book.title}". Due in 7 days.`);
+      }
+    
+      // Return book (mock)
+      function mockReturn(bookId) {
+        const book = state.catalog.find(b=>b.id===bookId);
+        if (!book) return alert('Book not found');
+        if (book.borrower !== currentUser.id) {
+          book.borrower = null; // admin action
+        }
+        // determine fine if overdue
+        const borrowedAt = book.borrowedAt || Date.now();
+        const dueAt = borrowedAt + 7*24*60*60*1000;
+        if (Date.now() > dueAt) {
+          const daysLate = Math.ceil((Date.now()-dueAt)/(1000*60*60*24));
+          const fine = daysLate * 1.5; // 1.5$ per day
+          currentUser.fines = (currentUser.fines || 0) + fine;
+          notifyUser(currentUser.id, `Late return fine $${fine.toFixed(2)} applied for "${book.title}".`);
+        }
+        book.status = 'Available';
+        book.borrower = null;
+        book.borrowedAt = null;
+        DB.write('smartlib_state', state);
+        renderBookCatalog();
+        renderDashboard();
+      }
+    
+      // Extend loan
+      function extendLoan(bookId) {
+        const book = state.catalog.find(b=>b.id===bookId);
+        if (!book || book.borrower !== currentUser.id) return alert('Cannot extend');
+        book.borrowedAt = (book.borrowedAt || Date.now()) - (1*24*60*60*1000); // push due by +1 day by moving borrowedAt back 1 day — simple demo
+        DB.write('smartlib_state', state);
+        renderDashboard();
+        notifyUser(currentUser.id, `Loan for "${book.title}" extended by 1 day (mock).`);
+      }
+    
+      // View details modal
+      function viewDetails(bookId) {
+        const book = state.catalog.find(b=>b.id===bookId);
+        if (!book) return;
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4';
+        modal.innerHTML = `<div class="bg-gray-900 p-6 rounded-lg max-w-2xl w-full">
+          <div class="flex justify-between items-start">
+            <h3 class="text-xl font-semibold">${book.title}</h3>
+            <button class="text-gray-400" onclick="document.body.removeChild(this.closest('.fixed'))">Close</button>
+          </div>
+          <p class="text-sm text-gray-400 mt-2">${(book.authors||[]).join(', ')}</p>
+          <p class="text-xs text-gray-400 mt-2">Type: ${book.type}</p>
+          <p class="text-xs text-gray-400 mt-2">Tags: ${(book.tags||[]).join(', ')}</p>
+          <div class="mt-4 flex gap-2">
+            ${book.status === 'Available' ? `<button class="bg-teal-600 px-3 py-1 rounded" onclick="issueBook('${book.id}');document.body.removeChild(this.closest('.fixed'))">Issue</button>` : ''}
+            <button class="bg-gray-700 px-3 py-1 rounded" onclick="document.body.removeChild(this.closest('.fixed'))">Close</button>
+          </div>
+        </div>`;
+        document.body.appendChild(modal);
+      }
+    
+      // ---------- Recommendation Engine (simple) ----------
+      function isRecommendedToUser(book) {
+        // simple scoring: preference match + popularity
+        const prefs = currentUser.prefs || {};
+        const tags = book.tags || [];
+        let score = (book.popularity || 0) * 0.01;
+        if ((prefs.genres || []).some(g => tags.join(' ').toLowerCase().includes(g.toLowerCase()))) score += 1;
+        if (book.type === 'E-Book' && (prefs.prefersEbooks || false)) score += 0.3;
+        return score > 0.5;
+      }
+      function renderRecommendations() {
+        const root = el('recommendations');
+        root.innerHTML = '';
+        const recs = state.catalog.filter(b=> b.status === 'Available' && isRecommendedToUser(b)).slice(0,6);
+        if (!recs.length) root.innerHTML = '<p class="text-gray-400 text-sm">No recommendations yet — borrow more to get personal suggestions.</p>';
+        recs.forEach(b => {
+          const node = document.createElement('div');
+          node.className = 'bg-gray-900 p-3 rounded flex justify-between items-center';
+          node.innerHTML = `<div><div class="font-medium">${b.title}</div><div class="text-xs text-gray-400">${b.type} • ${ (b.tags||[]).slice(0,2).join(', ') }</div></div>
+                            <div><button class="bg-teal-600 px-2 py-1 rounded" onclick="issueBook('${b.id}')">Issue</button></div>`;
+          root.appendChild(node);
+        });
+      }
+    
+      // ---------- Seating & Rooms ----------
+      function renderSeatMap() {
+        const seatMap = el('seat-map');
+        seatMap.innerHTML = '';
+        const seats = state.seats || [];
+        seats.forEach(seat => {
+          const d = document.createElement('div');
+          d.className = 'p-2 text-center text-sm font-semibold rounded shadow-md cursor-pointer';
+          d.textContent = `S${seat.id}`;
+          if (seat.booked) {
+            d.classList.add('seat-booked','text-white','cursor-not-allowed','opacity-90');
+          } else {
+            d.classList.add('seat-available','text-white');
+            d.onclick = () => reserveSeat(seat.id);
+          }
+          seatMap.appendChild(d);
+        });
+        // occupancy stats
+        const occupied = seats.filter(s=>s.booked).length;
+        const total = seats.length;
+        el('occupancy-stats').textContent = `${occupied} / ${total}`;
+        const pct = total > 0 ? Math.round(((total - occupied) / total) * 100) : 0;
+        el('occupancy-pct').textContent = `${pct}% available`;
+      }
+    
+      function reserveSeat(seatId) {
+        const seat = state.seats.find(s=>s.id===seatId);
+        if (!seat || seat.booked) return alert('Seat not available');
+        seat.booked = true; seat.user = currentUser.id;
+        DB.write('smartlib_state', state);
+        renderSeatMap();
+        notifyUser(currentUser.id, `Seat S${seatId} reserved (mock).`);
+      }
+    
+      // Room booking
+      function renderRooms() {
+        const select = el('room-select');
+        select.innerHTML = '';
+        state.rooms.forEach(r => {
+          const opt = document.createElement('option');
+          opt.value = r.id; opt.textContent = `${r.name} (cap ${r.capacity})`;
+          select.appendChild(opt);
+        });
+      }
+      document.getElementById('reserve-room-btn').addEventListener('click', () => {
+        const rid = el('room-select').value;
+        const date = el('room-date').value;
+        const slot = el('room-slot').value;
+        if (!date) return alert('Pick a date');
+        const room = state.rooms.find(r=>r.id===rid);
+        if (!room) return alert('Room not found');
+        // check conflict
+        const exists = room.bookings.some(b => b.date===date && b.slot===slot);
+        if (exists) return alert('Slot already booked');
+        const booking = { id: uid(), user: currentUser.id, date, slot, createdAt: Date.now() };
+        room.bookings.push(booking);
+        DB.write('smartlib_state', state);
+        notifyUser(currentUser.id, `Room ${room.name} booked for ${date} ${slot}`);
+        alert('Room booked!');
+      });
+    
+      // ---------- Analytics ----------
+      let popularityChart = null;
+      function renderAnalytics() {
+        // popularity chart
+        try {
+            const ctx = document.getElementById('popularity-chart').getContext('2d');
+            const top = [...state.catalog].sort((a,b)=> (b.popularity||0)-(a.popularity||0)).slice(0,8);
+            const labels = top.map(b=>b.title.slice(0,20));
+            const data = top.map(b=>b.popularity||0);
+        
+            if (popularityChart) popularityChart.destroy();
+            popularityChart = new Chart(ctx, {
+              type: 'bar',
+              data: { 
+                  labels, 
+                  datasets: [{ 
+                      label: 'Borrows', 
+                      data,
+                      backgroundColor: 'rgba(20, 184, 166, 0.6)', // teal
+                      borderColor: 'rgba(15, 118, 110, 1)',
+                      borderWidth: 1
+                  }] 
+              },
+              options: { 
+                  responsive: true, 
+                  plugins:{ legend:{ display:false } },
+                  scales: {
+                      y: {
+                          ticks: { color: '#9ca3af' },
+                          grid: { color: '#374151' }
+                      },
+                      x: {
+                          ticks: { color: '#9ca3af' }
+                      }
+                  }
+              }
+            });
+        } catch (e) {
+            console.error("Failed to render chart:", e);
+        }
+    
+        // forecast list (mock predictive)
+        renderForecast();
+      }
+    
+      function renderForecast() {
+        const root = el('forecast-list');
+        root.innerHTML = '';
+        const categories = ['Core Computer Science Texts','Civil Engineering Journals','Data Science','Philosophy'];
+        categories.forEach(cat => {
+          const risk = Math.min(95, Math.round(Math.random()*80 + (cat.includes('Core')?20:0)));
+          const node = document.createElement('div');
+          node.className = 'bg-gray-700 p-4 rounded';
+          node.innerHTML = `<div class="font-medium">${cat}</div>
+            <div class="w-full bg-gray-600 rounded-full h-2.5 mt-2"><div style="width:${risk}%" class="h-2.5 rounded-full ${risk>70?'bg-red-500':'bg-yellow-500'}"></div></div>
+            <div class="text-xs mt-1 ${risk>70?'text-red-400':'text-yellow-400'}">${risk}% risk of shortage — ${risk>70? 'Suggest Order +20 copies.':'Maintain stock.'}</div>`;
+          root.appendChild(node);
+        });
+      }
+      el('recalc-forecast').addEventListener('click', renderForecast);
+    
+      // ---------- Export (CSV + PDF) ----------
+      el('export-btn').addEventListener('click', () => {
+        exportCSV();
+        exportPDF();
+      });
+    
+      function exportCSV() {
+        const rows = [['id','title','type','status','borrower','popularity']];
+        state.catalog.forEach(b => rows.push([b.id, b.title, b.type, b.status, b.borrower || '', b.popularity || 0]));
+        const csv = rows.map(r=> r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\n');
+        const blob = new Blob([csv], {type:'text/csv'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'catalog-export.csv'; a.click();
+        URL.revokeObjectURL(url);
+      }
+    
+      async function exportPDF() {
+        try {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.setFontSize(14);
+            doc.text('SmartLib+ — Catalog Export', 14, 20);
+            doc.setFontSize(10);
+            state.catalog.slice(0,30).forEach((b,i) => {
+              doc.text(`${i+1}. ${b.title} — ${b.type} — ${b.status}`, 14, 30 + i*6);
+            });
+            doc.save('smartlib-catalog.pdf');
+        } catch(e) {
+            console.error("jsPDF failed:", e);
+            alert("Error exporting PDF. Check console.");
+        }
+      }
+    
+      // ---------- Admin ----------
+      function renderAdmin() {
+        el('bulk-json').value = JSON.stringify(state.catalog.slice(0,5), null, 2);
+      }
+      document.getElementById('bulk-load').addEventListener('click', () => {
+        try {
+          const arr = JSON.parse(el('bulk-json').value);
+          if (!Array.isArray(arr)) throw new Error('JSON must be an array');
+          arr.forEach(item => {
+            if (!item.title) return; // simple validation
+            item.id = item.id || uid();
+            item.status = item.status || 'Available';
+            item.popularity = item.popularity || 0;
+            // Avoid duplicates
+            if (!state.catalog.some(b => b.id === item.id)) {
+                state.catalog.push(item);
+            }
+          });
+          DB.write('smartlib_state', state);
+          alert('Bulk loaded');
+          renderBookCatalog();
+          renderAdmin();
+        } catch (e) { alert('Invalid JSON: ' + e.message); }
+      });
+      document.getElementById('download-sample').addEventListener('click', () => {
+        const sample = [{ title:'Sample Book', authors:['A'], type:'Book', tags:['Sample'] }];
+        const blob = new Blob([JSON.stringify(sample,null,2)], {type:'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = 'sample.json'; a.click();
+        URL.revokeObjectURL(url);
+      });
+    
+      document.getElementById('simulate-day').addEventListener('click', () => {
+        // Randomly update popularity to simulate activity
+        state.catalog.forEach(b => b.popularity = (b.popularity || 0) + Math.floor(Math.random()*5));
+        DB.write('smartlib_state', state);
+        renderAnalytics();
+        renderBookCatalog();
+        alert('Simulated one day: popularity updated.');
+      });
+    
+      document.getElementById('clear-cache').addEventListener('click', () => {
+        if (!confirm('Clear all local demo data?')) return;
+        localStorage.removeItem('smartlib_state');
+        location.reload();
+      });
+    
+      // Reset demo button
+      el('clear-storage').addEventListener('click', () => {
+        if (!confirm('Reset demo data?')) return;
+        localStorage.removeItem('smartlib_state');
+        location.reload();
+      });
+    
+      // ---------- Notifications & Helpers ----------
+      function notifyUser(userId, text) {
+        state.notifications.unshift({ id: uid(), user: userId, text, time: Date.now() });
+        if (state.notifications.length > 20) state.notifications.pop(); // limit
+        DB.write('smartlib_state', state);
+        if (userId === currentUser.id) renderNotifications();
+      }
+    
+      // ---------- Mock Sign In (for dashboard button) ----------
+      el('sign-in-btn').addEventListener('click', () => {
+        const u = state.users[0];
+        currentUser = u;
+        renderDashboard();
+        showSection('dashboard');
+        notifyUser(currentUser.id, 'Signed in (demo)');
+      });
+    
+      // ---------- Small features ----------
+      el('pay-fines-btn').addEventListener('click', () => {
+        if (!currentUser.fines || currentUser.fines <= 0) return alert('No fines due');
+        if (!confirm(`Pay $${currentUser.fines.toFixed(2)} now? (mock)`)) return;
+        currentUser.fines = 0;
+        DB.write('smartlib_state', state);
+        renderDashboard();
+        alert('Fines paid (mock).');
+      });
+    
+      el('global-search').addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') {
+          showSection('catalog');
+          el('catalog-filter').value = e.target.value;
+          renderBookCatalog();
+        }
+      });
+    
+      el('catalog-filter').addEventListener('input', renderBookCatalog);
+      el('sort-select').addEventListener('change', renderBookCatalog);
+    
+      // ---------- Room bookings view init ----------
+      renderRooms();
+    
+      // ---------- Load initial view (only dashboard, as it's hidden) ----------
+      // We will call these functions *after* login
+      // renderDashboard();
+      // renderBookCatalog();
+      // renderSeatMap();
+      // renderAnalytics();
+    
+      // ---------- Service Worker (skeleton for offline / caching) ----------
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('smartlib-sw.js').catch(err => {
+          // If file not present, this fails - it's fine for demo
+          console.info('ServiceWorker registration (optional) failed:', err);
+        });
+      }
+    
+      // ---------- Expose a few functions for inline onclick usage ----------
+      window.issueBook = issueBook;
+      window.mockReturn = mockReturn;
+      window.extendLoan = extendLoan;
+      window.viewDetails = viewDetails;
+      window.reserveSeat = reserveSeat;
+      window.dismissNote = dismissNote;
+    
+      // ---------- Final persistence save before unload ----------
+      window.addEventListener('beforeunload', () => DB.write('smartlib_state', state));
+      </script>
+
+    </div><script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginForm = document.getElementById('login-form');
+            const loginPage = document.getElementById('login-page');
+            const dashboardPage = document.getElementById('dashboard-page');
+
+            if (loginForm) {
+                loginForm.addEventListener('submit', (e) => {
+                    e.preventDefault(); // Stop the form from actually submitting
+                    
+                    // You would normally validate email/password here
+                    // For this demo, we'll just switch views.
+                    
+                    // Hide login page
+                    loginPage.style.display = 'none'; // Use style.display for instant hide
+                    
+                    // Show dashboard page
+                    dashboardPage.classList.remove('hidden');
+                    
+                    // Change body background to the dashboard's dark theme
+                    document.body.classList.remove('gradient-bg');
+                    document.body.classList.add('bg-gray-900', 'text-gray-100', 'min-h-screen');
+
+                    // Manually trigger the dashboard's render functions
+                    // This ensures all data is loaded when the dashboard becomes visible
+                    if (typeof renderDashboard === 'function') {
+                        renderDashboard();
+                        renderBookCatalog();
+                        renderSeatMap();
+                        renderAnalytics();
+                        renderRooms(); // Make sure rooms are populated
+                    } else {
+                        console.error("Dashboard render functions not found. Make sure dashboard script is loaded.");
+                    }
+                });
+            }
+        });
+    </script>
+
+</body>
+</html>
